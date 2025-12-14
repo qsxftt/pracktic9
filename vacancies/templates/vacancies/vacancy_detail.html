@@ -1,0 +1,71 @@
+{% extends 'vacancies/base.html' %}
+
+{% block title %}{{ vacancy.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <h1 class="card-title">{{ vacancy.name }}</h1>
+                        <h3 class="card-subtitle text-muted">{{ vacancy.company_name }}</h3>
+                    </div>
+                    {% if vacancy.company_logo %}
+                    <img src="{{ vacancy.company_logo }}" alt="{{ vacancy.company_name }}" 
+                         class="company-logo" style="max-width: 120px;">
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <span class="badge bg-primary fs-6">{{ vacancy.area_name }}</span>
+                    <span class="badge bg-secondary fs-6">{{ vacancy.specialization }}</span>
+                    <span class="badge bg-success fs-6">{{ vacancy.get_salary_display }}</span>
+                </div>
+
+                <div class="mb-4">
+                    <h4>Описание вакансии</h4>
+                    <div class="card p-3 bg-light">
+                        {{ vacancy.description|safe }}
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">Информация о зарплате</div>
+                            <div class="card-body">
+                                {% if vacancy.salary_from or vacancy.salary_to %}
+                                    <p class="fs-5">
+                                        {% if vacancy.salary_from %}от {{ vacancy.salary_from }}{% endif %}
+                                        {% if vacancy.salary_to %}до {{ vacancy.salary_to }}{% endif %}
+                                        {{ vacancy.salary_currency }}
+                                    </p>
+                                {% else %}
+                                    <p class="text-muted">Зарплата не указана</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">Дата публикации</div>
+                            <div class="card-body">
+                                <p class="fs-5">{{ vacancy.published_at|date:"d.m.Y H:i" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                    <a href="{% url 'vacancies:vacancy_search' %}" class="btn btn-secondary">Назад к поиску</a>
+                    <a href="{{ hh_url }}" target="_blank" class="btn btn-success">
+                        Откликнуться на HH
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

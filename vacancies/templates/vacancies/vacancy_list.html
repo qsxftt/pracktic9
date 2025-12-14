@@ -1,0 +1,172 @@
+{% extends 'vacancies/base.html' %}
+
+{% block title %}
+    {% if search_query %}
+        Результаты: {{ search_query.query }}
+    {% else %}
+        Поиск вакансий
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Левая колонка: форма поиска и фильтры -->
+    <div class="col-md-4">
+        <div class="search-form mb-4">
+            <h4>Поиск вакансий</h4>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    {{ search_form.search_text.label_tag }}
+                    {{ search_form.search_text }}
+                </div>
+                <div class="mb-3">
+                    {{ search_form.per_page.label_tag }}
+                    {{ search_form.per_page }}
+                </div>
+                <div class="mb-3">
+                    {{ search_form.area.label_tag }}
+                    {{ search_form.area }}
+                    <small class="text-muted">{{ search_form.area.help_text }}</small>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Найти вакансии</button>
+            </form>
+        </div>
+
+        {% if vacancies %}
+        <div class="filter-form">
+            <h5>Фильтры</h5>
+            <form method="get">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ filter_form.salary_min.label_tag }}
+                            {{ filter_form.salary_min }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ filter_form.salary_max.label_tag }}
+                            {{ filter_form.salary_max }}
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-outline-primary w-100">Применить фильтры</button>
+                {% if request.GET %}
+                    <a href="{% url 'vacancies:vacancy_search' %}" class="btn btn-outline-secondary w-100 mt-2">Сбросить фильтры</a>
+                {% endif %}
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Правая колонка: результаты поиска -->
+    <div class="col-md-8">
+        {% if from_history %}
+            <div class="alert alert-info">
+                Просмотр результатов поиска из истории: "{{ search_query.query }}"
+            </div>
+        {% endif %}
+
+        {% if search_query and not from_history %}
+            <div class="alert alert-success">
+                <h4>Результаты поиска: "{{ search_query.query }}"</h4>
+                <p class="mb-0">Найдено вакансий: {{ vacancies.paginator.count }}</p>
+            </div>
+        {% endif %}
+
+        {% if vacancies %}
+            <div class="row">
+                {% for vacancy in vacancies %}
+                <div class="col-12">
+                    <div class="card vacancy-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div style="flex: 1;">
+                                    <h5 class="card-title">
+                                        <a href="{% url 'vacancies:vacancy_detail' vacancy.pk %}" class="text-decoration-none">
+                                            {{ vacancy.name }}
+                                        </a>
+                                    </h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">{{ vacancy.company_name }}</h6>
+                                    
+                                    <div class="mb-2">
+                                        <span class="badge bg-primary">{{ vacancy.area_name }}</span>
+                                        <span class="badge bg-secondary">{{ vacancy.specialization }}</span>
+                                    </div>
+                                    
+                                    <p class="card-text">
+                                        <span class="salary">{{ vacancy.get_salary_display }}</span>
+                                    </p>
+                                    
+                                    <p class="card-text text-muted small">
+                                        Опубликовано: {{ vacancy.published_at|date:"d.m.Y H:i" }}
+                                    </p>
+                                </div>
+                                
+                                {% if vacancy.company_logo %}
+                                <img src="{{ vacancy.company_logo }}" alt="{{ vacancy.company_name }}" 
+                                     class="company-logo ms-3">
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mt-3">
+                                <a href="{% url 'vacancies:vacancy_detail' vacancy.pk %}" class="btn btn-outline-primary btn-sm">
+                                    Подробнее
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Пагинация -->
+            {% if vacancies.has_other_pages %}
+            <nav aria-label="Навигация по страницам" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if vacancies.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Первая</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ vacancies.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Назад</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">Страница {{ vacancies.number }} из {{ vacancies.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if vacancies.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ vacancies.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Вперед</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ vacancies.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Последняя</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+        {% elif request.method == 'POST' %}
+            <div class="alert alert-warning">
+                По вашему запросу не найдено ни одной вакансии. Попробуйте изменить параметры поиска.
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                <h4>Добро пожаловать!</h4>
+                <p>Для поиска вакансий заполните форму слева. Вы можете:</p>
+                <ul>
+                    <li>Искать вакансии по названию</li>
+                    <li>Указывать количество отображаемых вакансий (до 100)</li>
+                    <li>Выбирать регион поиска</li>
+                    <li>Фильтровать результаты по зарплате после поиска</li>
+                </ul>
+                <p>Все ваши поисковые запросы сохраняются в <a href="{% url 'vacancies:search_history' %}">истории поисков</a>.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
